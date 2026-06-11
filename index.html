@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Grille Orale" />
+  <title>Grille Épreuve Orale</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="vendor/xlsx.bundle.js" defer></script>
+  <script src="vendor/jspdf.umd.min.js" defer></script>
+  <script src="vendor/html2canvas.min.js" defer></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- Barre de titre -->
+    <header class="topbar">
+      <button id="btn-eleves" class="icon-btn" title="Élèves" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </button>
+      <h1 class="topbar-title">Épreuve Orale</h1>
+      <button id="btn-settings" class="icon-btn" title="Réglages" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Bandeau élève : navigation + total + conseils + statut -->
+    <div id="eleve-banner" class="eleve-banner hidden">
+      <div class="banner-nav">
+        <button id="btn-prev-eleve" class="nav-btn" type="button">&#8249;</button>
+        <div id="eleve-banner-name" class="banner-name"></div>
+        <button id="btn-next-eleve" class="nav-btn" type="button">&#8250;</button>
+      </div>
+      <button id="btn-toggle-conseils" class="banner-side-btn" title="Conseils" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </button>
+      <div class="banner-total">
+        <span id="total-bar-check" class="banner-total-check" title="Grille complète">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <div class="banner-total-inner">
+          <span class="banner-total-label">Total</span>
+          <span id="total-bar-score" class="banner-total-score">0</span>
+          <span id="total-bar-max" class="banner-total-max">pts</span>
+        </div>
+      </div>
+      <button id="btn-print" class="banner-side-btn" title="Imprimer en PDF" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      </button>
+      <button id="banner-status-dot" class="banner-side-btn" title="Statut" type="button">
+        <span class="banner-dot"></span>
+      </button>
+    </div>
+
+    <!-- Conseils (par élève) -->
+    <div id="conseils-section" class="conseils hidden">
+      <textarea id="conseils-textarea" rows="2" placeholder="Conseils…"></textarea>
+    </div>
+
+    <!-- Grille de notation -->
+    <main id="grille-sections" class="grille-sections"></main>
+
+  </div>
+
+  <!-- Sidebar élèves -->
+  <aside id="sidebar-eleves" class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-head-title">
+        <span>Élèves</span>
+        <button id="btn-export-all-pdf" class="icon-btn" title="Enregistrer tous les élèves en PDF" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
+      </div>
+      <button id="btn-close-sidebar" class="icon-btn" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <ul id="sidebar-eleves-list" class="sidebar-list"></ul>
+  </aside>
+  <div id="sidebar-overlay" class="overlay hidden"></div>
+
+  <!-- Modal réglages -->
+  <div id="modal-settings" class="modal hidden">
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-card">
+
+      <div class="modal-head">
+        <h2>Réglages</h2>
+        <button id="btn-close-modal" class="icon-btn" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="tabs">
+        <button id="tab-grille" class="tab active" type="button">Config</button>
+        <button id="tab-eleves" class="tab" type="button">Élèves</button>
+        <button id="tab-sauvegarde" class="tab" type="button">Sauvegarde</button>
+      </div>
+
+      <!-- Barre d'actions (onglet Config uniquement) -->
+      <div id="grille-actions" class="actions-row">
+        <div class="actions-group">
+          <button id="btn-export-grille" class="btn btn-primary btn-sm" type="button">Exporter</button>
+          <button id="btn-import-grille" class="btn btn-outline btn-sm" type="button">Importer</button>
+        </div>
+        <div class="actions-group">
+          <button id="btn-load-cg" class="btn btn-outline btn-sm" type="button">Grille CG</button>
+          <button id="btn-load-dg" class="btn btn-outline btn-sm" type="button">Grille DG</button>
+        </div>
+      </div>
+
+      <!-- Ajout catégorie -->
+      <div id="modal-addcat-row" class="addcat-row">
+        <input id="input-new-cat" type="text" class="input" placeholder="Nouvelle catégorie…" />
+        <button id="btn-add-cat" class="btn btn-primary btn-sm" type="button">Ajouter</button>
+      </div>
+
+      <!-- Onglet Config -->
+      <div id="tab-content-grille" class="tab-content flex">
+        <div class="toggle-row">
+          <span class="toggle-label">Mode d'affichage</span>
+          <button id="toggle-pill-mode" class="pill-mode-toggle" type="button" title="Changer le mode d'affichage des niveaux">
+            <span id="pill-mode-label-simple">Simplifié</span>
+            <span class="sep">/</span>
+            <span id="pill-mode-label-detail" class="on">Détaillé</span>
+          </button>
+        </div>
+
+        <div id="view-cats" class="view flex">
+          <div id="settings-cats" class="settings-cats"></div>
+        </div>
+
+        <div id="view-item-form" class="view hidden">
+          <div id="btn-form-back" class="form-back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <h3 id="form-title">Item</h3>
+          </div>
+          <div id="form-content" class="form-content"></div>
+        </div>
+      </div>
+
+      <!-- Onglet Sauvegarde -->
+      <div id="tab-content-sauvegarde" class="tab-content hidden">
+        <div class="save-grid">
+          <div class="save-card">
+            <p class="save-title">JSON</p>
+            <p class="save-desc">Exporte et importe la grille, les élèves et leurs notes.</p>
+            <div class="save-actions">
+              <button id="btn-import-json" class="btn btn-outline btn-block" type="button">Importer</button>
+              <button id="btn-export-json" class="btn btn-primary btn-block" type="button">Télécharger</button>
+            </div>
+          </div>
+          <div class="save-card">
+            <p class="save-title">XLSX</p>
+            <p class="save-desc">Exporte nom, prénom et note par item pour chaque élève.</p>
+            <div class="save-actions">
+              <button id="btn-export-xlsx" class="btn btn-primary btn-block" type="button">Télécharger</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet Élèves -->
+      <div id="tab-content-eleves" class="tab-content hidden">
+        <p class="eleves-help">Coller une liste (un élève par ligne) — format <code>NOM Prénom</code> :</p>
+        <textarea id="textarea-eleves" rows="5" class="input eleves-textarea"
+          placeholder="DUPONT Jean&#10;MARTIN Sophie&#10;BERNARD Lucas"></textarea>
+        <div class="eleves-import-row">
+          <button id="btn-import-eleves" class="btn btn-primary" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Ajouter
+          </button>
+        </div>
+        <p id="eleves-count" class="eleves-count"></p>
+        <ul id="eleves-settings-list" class="eleves-list"></ul>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
